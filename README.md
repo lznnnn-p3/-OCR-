@@ -258,3 +258,8 @@ pip install -r requirements.txt
 ## License
 
 MIT
+
+## 项目截图
+<img width="1002" height="752" alt="ScreenShot_2026-05-13_101709_079" src="https://github.com/user-attachments/assets/6368739a-97f9-46ee-89ba-843c58e108ed" />
+<img width="1002" height="752" alt="ScreenShot_2026-05-13_104358_623" src="https://github.com/user-attachments/assets/653e468d-6b72-412d-9fcf-2b77e87fbce2" />
+
