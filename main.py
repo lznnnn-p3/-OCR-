@@ -584,52 +584,73 @@ class StepDialog(tk.Toplevel):
         self.update()
         time.sleep(0.3)
 
+        # 先截取屏幕，再在截图上叠加遮罩，保证能看到屏幕内容
+        screen_img = ImageGrab.grab(all_screens=True)
+        darkened = screen_img.copy()
+        darken = Image.new("RGB", darkened.size, (0, 0, 0))
+        darkened = Image.blend(darkened, darken, 0.5)
+
+        cancelled = [False]
+
         overlay = tk.Toplevel()
         overlay.attributes("-fullscreen", True)
-        overlay.attributes("-alpha", 0.3)
         overlay.attributes("-topmost", True)
-        overlay.configure(bg="black")
+        overlay.overrideredirect(True)
 
-        canvas = tk.Canvas(overlay, cursor="cross", bg="black")
+        tk_img = ImageTk.PhotoImage(darkened)
+        canvas = tk.Canvas(overlay, cursor="cross", highlightthickness=0,
+                           width=darkened.width, height=darkened.height)
         canvas.pack(fill=tk.BOTH, expand=True)
+        canvas.create_image(0, 0, anchor=tk.NW, image=tk_img, tag="bg")
 
         rect = [0, 0, 0, 0]
-        start = [0, 0]
+        dragging = [False]
 
         def on_mouse_down(e):
-            start[0], start[1] = e.x, e.y
+            dragging[0] = True
             rect[0], rect[1] = e.x, e.y
+            rect[2], rect[3] = e.x, e.y
 
         def on_mouse_move(e):
+            if not dragging[0]:
+                return
             rect[2], rect[3] = e.x, e.y
-            canvas.delete("rect")
-            canvas.create_rectangle(rect[0], rect[1], rect[2], rect[3],
-                                    outline="red", width=2, tag="rect")
+            canvas.delete("sel")
+            x1, y1 = min(rect[0], rect[2]), min(rect[1], rect[3])
+            x2, y2 = max(rect[0], rect[2]), max(rect[1], rect[3])
+            canvas.create_rectangle(x1, y1, x2, y2, outline="red", width=2, tag="sel")
 
         def on_mouse_up(e):
+            dragging[0] = False
+            overlay.destroy()
+
+        def on_cancel(e):
+            cancelled[0] = True
             overlay.destroy()
 
         canvas.bind("<ButtonPress-1>", on_mouse_down)
         canvas.bind("<B1-Motion>", on_mouse_move)
         canvas.bind("<ButtonRelease-1>", on_mouse_up)
+        canvas.bind("<Button-3>", on_cancel)
+        canvas.bind("<Escape>", on_cancel)
 
+        overlay.focus_force()
+        overlay.grab_set()
         overlay.wait_window()
-
-        x1, y1, x2, y2 = min(rect[0], rect[2]), min(rect[1], rect[3]), max(rect[0], rect[2]), max(rect[1], rect[3])
-        if x2 - x1 < 5 or y2 - y1 < 5:
-            self.deiconify()
-            return
-
-        # 截图
-        img = ImageGrab.grab(bbox=(x1, y1, x2, y2), all_screens=True)
-        ts = int(time.time())
-        save_path = TEMPLATES_DIR / f"capture_{ts}.png"
-        img.save(str(save_path))
-        self.template_var.set(str(save_path))
 
         self.deiconify()
         self.lift()
         self.focus_force()
+
+        x1, y1, x2, y2 = min(rect[0], rect[2]), min(rect[1], rect[3]), max(rect[0], rect[2]), max(rect[1], rect[3])
+        if cancelled[0] or x2 - x1 < 5 or y2 - y1 < 5:
+            return
+
+        img = screen_img.crop((x1, y1, x2, y2))
+        ts = int(time.time())
+        save_path = TEMPLATES_DIR / f"capture_{ts}.png"
+        img.save(str(save_path))
+        self.template_var.set(str(save_path))
 
     def _build_template_params(self):
         """构建模板匹配的参数 UI"""
@@ -698,23 +719,45 @@ class StepDialog(tk.Toplevel):
         self.update()
         time.sleep(0.3)
 
+        # 先截取屏幕，显示原图让用户看到真实颜色
+        screen_img = ImageGrab.grab(all_screens=True)
+
         overlay = tk.Toplevel()
         overlay.attributes("-fullscreen", True)
-        overlay.attributes("-alpha", 0.01)
         overlay.attributes("-topmost", True)
-        overlay.configure(bg="black", cursor="crosshair")
+        overlay.overrideredirect(True)
+
+        tk_img = ImageTk.PhotoImage(screen_img)
+        canvas = tk.Canvas(overlay, cursor="crosshair", highlightthickness=0,
+                           width=screen_img.width, height=screen_img.height)
+        canvas.pack(fill=tk.BOTH, expand=True)
+        canvas.create_image(0, 0, anchor=tk.NW, image=tk_img, tag="bg")
 
         picked = [None]
+        click_pos = [None]
 
-        def on_click(e):
+        def on_down(e):
+            click_pos[0] = (e.x, e.y)
+
+        def on_up(e):
+            if click_pos[0]:
+                overlay.destroy()
+
+        def on_cancel(e):
             overlay.destroy()
-            img = ImageGrab.grab(all_screens=True)
-            rgb = img.getpixel((e.x, e.y))
-            picked[0] = f"#{rgb[0]:02X}{rgb[1]:02X}{rgb[2]:02X}"
 
-        overlay.bind("<Button-1>", on_click)
-        overlay.bind("<Escape>", lambda e: overlay.destroy())
+        canvas.bind("<ButtonPress-1>", on_down)
+        canvas.bind("<ButtonRelease-1>", on_up)
+        canvas.bind("<Button-3>", on_cancel)
+        canvas.bind("<Escape>", on_cancel)
+
+        overlay.focus_force()
+        overlay.grab_set()
         overlay.wait_window()
+
+        if click_pos[0]:
+            rgb = screen_img.getpixel(click_pos[0])
+            picked[0] = f"#{rgb[0]:02X}{rgb[1]:02X}{rgb[2]:02X}"
 
         self.deiconify()
         self.lift()
@@ -1285,33 +1328,57 @@ class OCRToolApp:
         self.root.withdraw()
         time.sleep(0.4)
 
+        screen_img = ImageGrab.grab(all_screens=True)
+        darkened = screen_img.copy()
+        darken = Image.new("RGB", darkened.size, (0, 0, 0))
+        darkened = Image.blend(darkened, darken, 0.5)
+
+        cancelled = [False]
+
         overlay = tk.Toplevel()
         overlay.attributes("-fullscreen", True)
-        overlay.attributes("-alpha", 0.3)
         overlay.attributes("-topmost", True)
-        overlay.configure(bg="black")
+        overlay.overrideredirect(True)
 
-        canvas = tk.Canvas(overlay, cursor="cross", bg="black")
+        tk_img = ImageTk.PhotoImage(darkened)
+        canvas = tk.Canvas(overlay, cursor="cross", highlightthickness=0,
+                           width=darkened.width, height=darkened.height)
         canvas.pack(fill=tk.BOTH, expand=True)
+        canvas.create_image(0, 0, anchor=tk.NW, image=tk_img, tag="bg")
 
         rect = [0, 0, 0, 0]
+        dragging = [False]
 
         def on_down(e):
+            dragging[0] = True
             rect[0], rect[1] = e.x, e.y
+            rect[2], rect[3] = e.x, e.y
 
         def on_move(e):
+            if not dragging[0]:
+                return
             rect[2], rect[3] = e.x, e.y
-            canvas.delete("rect")
-            canvas.create_rectangle(rect[0], rect[1], rect[2], rect[3],
-                                    outline="#00ff00", width=3, tag="rect")
+            canvas.delete("sel")
+            x1, y1 = min(rect[0], rect[2]), min(rect[1], rect[3])
+            x2, y2 = max(rect[0], rect[2]), max(rect[1], rect[3])
+            canvas.create_rectangle(x1, y1, x2, y2, outline="#00ff00", width=3, tag="sel")
 
         def on_up(e):
+            dragging[0] = False
+            overlay.destroy()
+
+        def on_cancel(e):
+            cancelled[0] = True
             overlay.destroy()
 
         canvas.bind("<ButtonPress-1>", on_down)
         canvas.bind("<B1-Motion>", on_move)
         canvas.bind("<ButtonRelease-1>", on_up)
+        canvas.bind("<Button-3>", on_cancel)
+        canvas.bind("<Escape>", on_cancel)
 
+        overlay.focus_force()
+        overlay.grab_set()
         overlay.wait_window()
 
         x1, y1 = min(rect[0], rect[2]), min(rect[1], rect[3])
@@ -1321,11 +1388,11 @@ class OCRToolApp:
         self.root.lift()
         self.root.focus_force()
 
-        if x2 - x1 < 5 or y2 - y1 < 5:
+        if cancelled[0] or x2 - x1 < 5 or y2 - y1 < 5:
             self._log("截取取消: 区域太小")
             return
 
-        img = ImageGrab.grab(bbox=(x1, y1, x2, y2), all_screens=True)
+        img = screen_img.crop((x1, y1, x2, y2))
         ts = int(time.time())
         save_path = TEMPLATES_DIR / f"capture_{ts}.png"
         img.save(str(save_path))

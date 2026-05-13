@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -c \"import py_compile; py_compile.compile\\('main.py', doraise=True\\); print\\('Syntax OK'\\)\")",
+      "Bash(python test_engine.py)"
+    ]
+  }
+}
