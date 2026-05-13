@@ -1,5 +1,6 @@
 # OCR 图像识别操作工具
 
+使用DeepSeekV4Pro制作的工具demo
 基于 OpenCV 模板匹配 + PyAutoGUI 键鼠操作的自动化工具，参考 [MAA](https://github.com/MaaAssistantArknights/MaaAssistantArknights) 设计思路。
 
 支持两种识别模式：
