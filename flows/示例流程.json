@@ -1,0 +1,102 @@
+{
+  "entry_step": "check_main_menu",
+  "steps": [
+    {
+      "id": "check_main_menu",
+      "name": "检测主界面",
+      "match_mode": "template",
+      "template": "templates/main_menu.png",
+      "threshold": 0.8,
+      "target_color": "",
+      "color_tolerance": 10,
+      "region": [],
+      "timeout": 30.0,
+      "interval": 1.0,
+      "on_match": {
+        "actions": [
+          { "type": "click", "x": 0, "y": 0, "button": "left", "clicks": 1, "keys": "", "text": "", "duration": 0.5, "scroll": 0, "x2": 0, "y2": 0, "relative": "match_center" },
+          { "type": "wait", "x": 0, "y": 0, "button": "left", "clicks": 1, "keys": "", "text": "", "duration": 2.0, "scroll": 0, "x2": 0, "y2": 0, "relative": "absolute" }
+        ],
+        "goto": "check_red_dot"
+      },
+      "on_no_match": {
+        "actions": [
+          { "type": "wait", "x": 0, "y": 0, "button": "left", "clicks": 1, "keys": "", "text": "", "duration": 3.0, "scroll": 0, "x2": 0, "y2": 0, "relative": "absolute" }
+        ],
+        "goto": "check_main_menu"
+      }
+    },
+    {
+      "id": "check_red_dot",
+      "name": "检测红点提示（颜色匹配示例）",
+      "match_mode": "color",
+      "template": "",
+      "threshold": 0.8,
+      "target_color": "#FF0000",
+      "color_tolerance": 20,
+      "region": [800, 0, 400, 200],
+      "timeout": 5.0,
+      "interval": 0.5,
+      "on_match": {
+        "actions": [
+          { "type": "click", "x": 0, "y": 0, "button": "left", "clicks": 1, "keys": "", "text": "", "duration": 0.5, "scroll": 0, "x2": 0, "y2": 0, "relative": "match_center" },
+          { "type": "wait", "x": 0, "y": 0, "button": "left", "clicks": 1, "keys": "", "text": "", "duration": 1.0, "scroll": 0, "x2": 0, "y2": 0, "relative": "absolute" }
+        ],
+        "goto": "check_popup"
+      },
+      "on_no_match": {
+        "actions": [],
+        "goto": "check_popup"
+      }
+    },
+    {
+      "id": "check_popup",
+      "name": "检查弹窗",
+      "match_mode": "template",
+      "template": "templates/popup.png",
+      "threshold": 0.75,
+      "target_color": "",
+      "color_tolerance": 10,
+      "region": [],
+      "timeout": 5.0,
+      "interval": 0.5,
+      "on_match": {
+        "actions": [
+          { "type": "click", "x": 100, "y": -50, "button": "left", "clicks": 1, "keys": "", "text": "", "duration": 0.5, "scroll": 0, "x2": 0, "y2": 0, "relative": "match_center" },
+          { "type": "wait", "x": 0, "y": 0, "button": "left", "clicks": 1, "keys": "", "text": "", "duration": 1.0, "scroll": 0, "x2": 0, "y2": 0, "relative": "absolute" }
+        ],
+        "goto": "daily_task"
+      },
+      "on_no_match": {
+        "actions": [],
+        "goto": "daily_task"
+      }
+    },
+    {
+      "id": "daily_task",
+      "name": "执行日常任务",
+      "match_mode": "template",
+      "template": "templates/daily_button.png",
+      "threshold": 0.8,
+      "target_color": "",
+      "color_tolerance": 10,
+      "region": [],
+      "timeout": 10.0,
+      "interval": 0.5,
+      "on_match": {
+        "actions": [
+          { "type": "click", "x": 0, "y": 0, "button": "left", "clicks": 1, "keys": "", "text": "", "duration": 0.5, "scroll": 0, "x2": 0, "y2": 0, "relative": "match_center" },
+          { "type": "wait", "x": 0, "y": 0, "button": "left", "clicks": 1, "keys": "", "text": "", "duration": 5.0, "scroll": 0, "x2": 0, "y2": 0, "relative": "absolute" },
+          { "type": "keypress", "x": 0, "y": 0, "button": "left", "clicks": 1, "keys": "esc", "text": "", "duration": 0.5, "scroll": 0, "x2": 0, "y2": 0, "relative": "absolute" }
+        ],
+        "goto": ""
+      },
+      "on_no_match": {
+        "actions": [
+          { "type": "wait", "x": 0, "y": 0, "button": "left", "clicks": 1, "keys": "", "text": "", "duration": 1.0, "scroll": 0, "x2": 0, "y2": 0, "relative": "absolute" }
+        ],
+        "goto": ""
+      }
+    }
+  ]
+}
